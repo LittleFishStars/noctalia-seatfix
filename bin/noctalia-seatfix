@@ -1,0 +1,17 @@
+#!/bin/sh
+# Noctalia 启动包装：用 LD_PRELOAD 过滤 niri 的 "niri-agent" seat。
+#
+# 背景：niri (shorin fork) 把自动化用的第二个 wl_seat（niri-agent）也广告给
+# 所有 wayland 客户端；Noctalia 5 的 WaylandConnection 遇到 wl_seat global
+# 时直接覆盖 m_seat，最终把 clipboard data-control device 建在 niri-agent
+# seat 上，于是剪贴板历史永远收不到 seat0 的 selection 事件（能粘贴、不记录）。
+#
+# 过滤库只保留每个 wl_display 的第一个 wl_seat（seat0），源码与说明见
+# ~/Projects/noctalia-seatfix。
+SO="${HOME}/.local/lib/noctalia-seat-filter.so"
+if [ -f "$SO" ]; then
+  LD_PRELOAD="${SO}${LD_PRELOAD:+:$LD_PRELOAD}"
+  export LD_PRELOAD
+fi
+
+exec /usr/bin/noctalia "$@"
